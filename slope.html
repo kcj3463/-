@@ -2,124 +2,80 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>경사 계산기</title>
   <style>
     body {
       font-family: 'Arial', sans-serif;
-      padding: 30px;
-      max-width: 600px;
-      margin: auto;
-    }
-    h1 {
-      font-size: 24px;
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      box-sizing: border-box;
-    }
-    button {
-      margin-top: 20px;
-      padding: 12px;
-      width: 100%;
-      background-color: #4CAF50;
-      color: white;
-      font-size: 16px;
-      border: none;
-      cursor: pointer;
-    }
-    .result {
-      margin-top: 20px;
-      font-size: 18px;
+      background: #f9f9f9;
+      text-align: center;
+      padding: 20px;
     }
     canvas {
-      margin-top: 20px;
-      width: 100%;
-      max-width: 100%;
-      background-color: #f9f9f9;
       border: 1px solid #ccc;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
   <h1>경사 계산기</h1>
-  <label for="height">높이 (m):</label>
-  <input type="number" id="height" placeholder="예: 3" />
+  <label>높이 (mm): <input id="height" type="number" value="3000"></label><br><br>
+  <label>거리 (mm): <input id="distance" type="number" value="2000"></label><br><br>
+  <label>파이프 외경 (mm): <input id="od" type="number" value="100"></label><br><br>
+  <button onclick="draw()">계산 및 그림 생성</button>
 
-  <label for="length">거리 (m):</label>
-  <input type="number" id="length" placeholder="예: 2" />
-
-  <button onclick="calculateSlope()">계산하기</button>
-
-  <div class="result" id="result"></div>
-
-  <canvas id="slopeCanvas" width="400" height="300"></canvas>
+  <canvas id="canvas" width="600" height="400"></canvas>
 
   <script>
-    function calculateSlope() {
-      const h = parseFloat(document.getElementById("height").value);
-      const l = parseFloat(document.getElementById("length").value);
-
-      if (isNaN(h) || isNaN(l) || l === 0) {
-        alert("유효한 숫자를 입력해주세요. 거리(m)는 0이 될 수 없습니다.");
-        return;
-      }
-
-      const percent = (h / l) * 100;
-      const angle = Math.atan(h / l) * (180 / Math.PI);
-      const diagonal = Math.sqrt(h * h + l * l);
-
-      document.getElementById("result").innerHTML =
-        `높이: ${h.toFixed(2)}m<br>` +
-        `거리: ${l.toFixed(2)}m<br>` +
-        `경사율: ${percent.toFixed(2)}%<br>` +
-        `경사각도: ${angle.toFixed(2)}°<br>` +
-        `대각선 거리: ${diagonal.toFixed(2)}m`;
-
-      drawSlope(h, l);
-    }
-
-    function drawSlope(h, l) {
-      const canvas = document.getElementById("slopeCanvas");
-      const ctx = canvas.getContext("2d");
+    function draw() {
+      const height = parseFloat(document.getElementById('height').value);
+      const distance = parseFloat(document.getElementById('distance').value);
+      const od = parseFloat(document.getElementById('od').value);
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const padding = 30;
-      const maxDrawWidth = canvas.width - 2 * padding;
-      const maxDrawHeight = canvas.height - 2 * padding;
+      const slope = (height / distance) * 100;
+      const angle = Math.atan(height / distance) * (180 / Math.PI);
+      const diagonal = Math.sqrt(height**2 + distance**2);
+      const elbowLength = od * 1.52; // 대략적인 90도 엘보 중심선 길이 계산 (1.5D 타입)
 
-      const scaleX = maxDrawWidth / l;
-      const scaleY = maxDrawHeight / h;
-      const scale = Math.min(scaleX, scaleY, 10); // 스케일이 너무 커지지 않도록
+      // 스케일 조정
+      const scale = 0.05;
+      const h = height * scale;
+      const d = distance * scale;
 
-      const baseX = padding;
-      const baseY = canvas.height - padding;
-      const endX = baseX + l * scale;
-      const topY = baseY - h * scale;
-
-      // 삼각형
-      ctx.beginPath();
-      ctx.moveTo(baseX, baseY);
-      ctx.lineTo(endX, baseY);  // 밑변
-      ctx.lineTo(endX, topY);   // 높이
-      ctx.closePath();
-      ctx.strokeStyle = "black";
-      ctx.stroke();
+      const startX = 100;
+      const startY = 300;
+      const endX = startX + d;
+      const endY = startY - h;
 
       // 경사선
       ctx.beginPath();
-      ctx.moveTo(baseX, baseY);
-      ctx.lineTo(endX, topY);
-      ctx.strokeStyle = "red";
-      ctx.lineWidth = 2;
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = '#007acc';
+      ctx.lineWidth = 3;
       ctx.stroke();
-      ctx.lineWidth = 1;
+
+      // 수직선과 수평선
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(startX, endY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = '#888';
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 텍스트 표기
+      ctx.fillStyle = '#000';
+      ctx.font = '14px Arial';
+      ctx.fillText(`높이: ${height}mm`, startX - 80, (startY + endY)/2);
+      ctx.fillText(`거리: ${distance}mm`, (startX + endX)/2 - 40, endY - 10);
+      ctx.fillText(`경사율: ${slope.toFixed(2)}%`, startX + d + 10, endY + 10);
+      ctx.fillText(`경사각도: ${angle.toFixed(2)}°`, startX + d + 10, endY + 30);
+      ctx.fillText(`대각선: ${diagonal.toFixed(2)}mm`, startX + d + 10, endY + 50);
+      ctx.fillText(`좌/우 엘보 길이: ${elbowLength.toFixed(1)}mm`, startX + d + 10, endY + 70);
     }
   </script>
 </body>
