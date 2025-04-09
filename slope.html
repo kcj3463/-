@@ -1,118 +1,157 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>경사 계산기</title>
   <style>
     body {
       font-family: 'Arial', sans-serif;
-      padding: 30px;
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 20px;
     }
-    input {
+    h1 {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+    }
+    input, select {
       width: 100%;
       padding: 10px;
+      margin-top: 5px;
+      box-sizing: border-box;
       font-size: 16px;
-      margin-bottom: 10px;
     }
     button {
-      padding: 10px;
-      width: 100%;
+      margin-top: 20px;
       background-color: #4CAF50;
       color: white;
-      font-size: 18px;
       border: none;
+      padding: 12px 20px;
       cursor: pointer;
-    }
-    canvas {
-      border: 1px solid #ccc;
-      margin-top: 20px;
+      font-size: 16px;
+      width: 100%;
     }
     .result {
+      margin-top: 25px;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    canvas {
       margin-top: 20px;
-      line-height: 1.8;
+      border: 1px solid #ccc;
     }
   </style>
 </head>
 <body>
   <h1>경사 계산기</h1>
-  <label>높이 (mm):</label>
-  <input type="number" id="height" placeholder="예: 3000">
-  <label>거리 (mm):</label>
-  <input type="number" id="distance" placeholder="예: 2000">
-  <label>외경 (mm):</label>
-  <input type="number" id="od" placeholder="예: 100">
+  <label for="height">높이 (mm):</label>
+  <input type="number" id="height" placeholder="예: 3000" />
+
+  <label for="length">거리 (mm):</label>
+  <input type="number" id="length" placeholder="예: 2000" />
+
+  <label for="diameter">외경 (mm):</label>
+  <input type="number" id="diameter" placeholder="예: 50" />
+
+  <label for="elbowType">엘보 방향:</label>
+  <select id="elbowType">
+    <option value="left">좌측</option>
+    <option value="right">우측</option>
+  </select>
+
   <button onclick="calculate()">계산하기</button>
 
   <div class="result" id="result"></div>
-  <canvas id="canvas" width="300" height="300"></canvas>
+  <canvas id="canvas" width="400" height="400"></canvas>
 
   <script>
     function calculate() {
       const height = parseFloat(document.getElementById('height').value);
-      const distance = parseFloat(document.getElementById('distance').value);
-      const od = parseFloat(document.getElementById('od').value);
-      const resultDiv = document.getElementById('result');
+      const length = parseFloat(document.getElementById('length').value);
+      const diameter = parseFloat(document.getElementById('diameter').value);
+      const elbowType = document.getElementById('elbowType').value;
 
-      if (isNaN(height) || isNaN(distance) || isNaN(od)) {
-        resultDiv.innerHTML = "숫자를 모두 입력해주세요.";
+      if (isNaN(height) || isNaN(length) || isNaN(diameter)) {
+        alert('모든 값을 입력해주세요.');
         return;
       }
 
-      const slopePercent = (height / distance) * 100;
-      const angle = Math.atan(height / distance) * (180 / Math.PI);
-      const diagonal = Math.sqrt(height ** 2 + distance ** 2);
-      const elbowLength = od * 1.5;
-      const left = distance - elbowLength;
-      const right = height - elbowLength;
+      const diagonal = Math.sqrt(height ** 2 + length ** 2);
+      const slopePercent = (height / length) * 100;
+      const angleDeg = Math.atan(height / length) * (180 / Math.PI);
 
-      resultDiv.innerHTML = `
-        높이: ${height.toFixed(2)}mm<br>
-        거리: ${distance.toFixed(2)}mm<br>
-        외경: ${od.toFixed(2)}mm<br>
-        경사율: ${slopePercent.toFixed(2)}%<br>
-        경사각도: ${angle.toFixed(2)}°<br>
-        대각선 거리: ${diagonal.toFixed(2)}mm<br><br>
-        <strong>엘보 기준 벤딩 치수</strong><br>
-        좌측 치수: ${left >= 0 ? left.toFixed(2) + "mm" : "계산불가"}<br>
-        우측 치수: ${right >= 0 ? right.toFixed(2) + "mm" : "계산불가"}
+      // 엘보 치수 계산
+      const leftBend = length - diameter * 0.75;
+      const rightBend = height - diameter * 0.75;
+
+      let resultText = `
+        <b>높이:</b> ${height.toFixed(2)}mm<br/>
+        <b>거리:</b> ${length.toFixed(2)}mm<br/>
+        <b>외경:</b> ${diameter.toFixed(2)}mm<br/>
+        <b>경사율:</b> ${slopePercent.toFixed(2)}%<br/>
+        <b>경사각도:</b> ${angleDeg.toFixed(2)}°<br/>
+        <b>대각선 거리:</b> ${diagonal.toFixed(2)}mm<br/><br/>
+        <b>엘보 기준 벤딩 치수</b><br/>
       `;
 
-      // Canvas 그리기
-      const canvas = document.getElementById("canvas");
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (elbowType === "left") {
+        resultText += `좌측 치수: ${leftBend.toFixed(2)}mm`;
+      } else {
+        resultText += `우측 치수: ${rightBend.toFixed(2)}mm`;
+      }
 
-      // 비율 축소
-      const scale = Math.max(height, distance) > 0 ? 250 / Math.max(height, distance) : 1;
-      const h = height * scale;
-      const d = distance * scale;
+      document.getElementById('result').innerHTML = resultText;
 
-      ctx.beginPath();
-      ctx.moveTo(25, 275);
-      ctx.lineTo(25 + d, 275); // 거리
-      ctx.lineTo(25 + d, 275 - h); // 높이
-      ctx.lineTo(25, 275); // 원점
-      ctx.strokeStyle = "gray";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // 대각선 (경사면)
-      ctx.beginPath();
-      ctx.moveTo(25, 275);
-      ctx.lineTo(25 + d, 275 - h);
-      ctx.strokeStyle = "red";
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      drawTriangle(length, height, elbowType, diameter);
     }
 
-    // URL 쿼리값 자동 입력
-    window.onload = function () {
-      const params = new URLSearchParams(window.location.search);
-      if (params.has('height')) document.getElementById('height').value = params.get('height');
-      if (params.has('distance')) document.getElementById('distance').value = params.get('distance');
-      if (params.has('od')) document.getElementById('od').value = params.get('od');
-      if (params.has('height') && params.has('distance') && params.has('od')) calculate();
-    };
+    function drawTriangle(base, height, type, diameter) {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const scale = Math.min(300 / base, 300 / height);
+      const x0 = 50;
+      const y0 = 350;
+      const x1 = x0 + base * scale;
+      const y1 = y0;
+      const x2 = (type === "right") ? x1 : x0;
+      const y2 = y0 - height * scale;
+
+      // 밑변
+      ctx.strokeStyle = '#999';
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+
+      // 높이
+      ctx.strokeStyle = '#999';
+      ctx.beginPath();
+      ctx.moveTo(x2, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      // 대각선
+      ctx.strokeStyle = '#f00';
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      // 라벨
+      ctx.fillStyle = '#000';
+      ctx.font = '14px Arial';
+      ctx.fillText(`거리: ${base.toFixed(0)}mm`, (x0 + x1) / 2 - 30, y0 + 15);
+      ctx.fillText(`높이: ${height.toFixed(0)}mm`, x2 + 5, (y1 + y2) / 2);
+      ctx.fillText(`대각선`, (x0 + x2) / 2 - 20, (y0 + y2) / 2 - 10);
+    }
   </script>
 </body>
 </html>
