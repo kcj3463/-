@@ -1,60 +1,47 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>경사 계산 그림</title>
+  <title>경사 계산기</title>
   <style>
-    canvas {
-      border: 1px solid #ccc;
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 40px;
+    }
+    .result {
+      font-size: 20px;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
+  <h1>경사 계산기</h1>
+  <div class="result" id="output">계산 중...</div>
 
-<canvas id="slopeCanvas" width="400" height="300"></canvas>
+  <script>
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return parseFloat(urlParams.get(param));
+    }
 
-<script>
-  const canvas = document.getElementById("slopeCanvas");
-  const ctx = canvas.getContext("2d");
+    const a = getQueryParam("a");
+    const b = getQueryParam("b");
 
-  // 스케일 조정
-  const scale = 1;  // 실사용 시 적절히 조정
+    const output = document.getElementById("output");
 
-  // 실제 값 (단위는 px로 변환 필요)
-  const horizontal = 200;
-  const vertical = 100;
-
-  // 삼각형 시작 위치
-  const startX = 50;
-  const startY = 200;
-
-  const endX = startX + horizontal * scale;
-  const endY = startY;
-  const topX = startX + horizontal * scale;
-  const topY = startY - vertical * scale;
-
-  // 삼각형 그리기
-  ctx.beginPath();
-  ctx.moveTo(startX, startY); // 원점
-  ctx.lineTo(endX, endY);     // 수평
-  ctx.lineTo(topX, topY);     // 수직
-  ctx.closePath();
-  ctx.stroke();
-
-  // 라벨
-  ctx.font = "14px Arial";
-  ctx.fillText("200", (startX + endX) / 2 - 10, startY + 20);   // 수평 거리
-  ctx.fillText("100", topX + 10, (startY + topY) / 2);         // 높이
-  ctx.fillText("26.57°", startX + 10, startY - 10);             // 각도
-
-  // 선 강조
-  ctx.beginPath();
-  ctx.moveTo(startX, startY);
-  ctx.lineTo(topX, topY);
-  ctx.strokeStyle = "red";
-  ctx.stroke();
-
-</script>
-
+    if (!isNaN(a) && !isNaN(b) && b !== 0) {
+      const percent = ((a / b) * 100).toFixed(2);
+      const angle = (Math.atan(a / b) * 180 / Math.PI).toFixed(2);
+      output.innerHTML = `
+        높이: ${a}m<br>
+        거리: ${b}m<br>
+        경사율: ${percent}%<br>
+        경사각도: ${angle}&deg;
+      `;
+    } else {
+      output.innerHTML = "올바른 값을 입력하세요. 예: ?a=3&b=2";
+    }
+  </script>
 </body>
 </html>
