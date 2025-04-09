@@ -1,47 +1,98 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
   <title>경사 계산기</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding-top: 40px;
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    label, input {
+      font-size: 1.2em;
+    }
+    canvas {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      background: white;
     }
     .result {
-      font-size: 20px;
       margin-top: 20px;
+      font-size: 1.2em;
     }
   </style>
 </head>
 <body>
   <h1>경사 계산기</h1>
-  <div class="result" id="output">계산 중...</div>
+  <label>높이 (m): <input type="number" id="height" value="3" /></label><br><br>
+  <label>거리 (m): <input type="number" id="length" value="2" /></label><br><br>
+  <button onclick="calculate()">계산</button>
+
+  <div class="result" id="result"></div>
+  <canvas id="slopeCanvas" width="400" height="300"></canvas>
 
   <script>
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return parseFloat(urlParams.get(param));
-    }
+    function calculate() {
+      const a = parseFloat(document.getElementById('height').value);
+      const b = parseFloat(document.getElementById('length').value);
+      if (isNaN(a) || isNaN(b) || a <= 0 || b <= 0) {
+        alert("올바른 높이와 거리를 입력하세요.");
+        return;
+      }
 
-    const a = getQueryParam("a");
-    const b = getQueryParam("b");
+      const slope = (a / b) * 100;
+      const angle = Math.atan(a / b) * (180 / Math.PI);
+      const diagonal = Math.sqrt(a * a + b * b);
 
-    const output = document.getElementById("output");
-
-    if (!isNaN(a) && !isNaN(b) && b !== 0) {
-      const percent = ((a / b) * 100).toFixed(2);
-      const angle = (Math.atan(a / b) * 180 / Math.PI).toFixed(2);
-      output.innerHTML = `
-        높이: ${a}m<br>
-        거리: ${b}m<br>
-        경사율: ${percent}%<br>
-        경사각도: ${angle}&deg;
+      const resultHTML = `
+        <p>높이: <strong>${a}m</strong></p>
+        <p>거리: <strong>${b}m</strong></p>
+        <p>경사율: <strong>${slope.toFixed(2)}%</strong></p>
+        <p>경사각도: <strong>${angle.toFixed(2)}°</strong></p>
+        <p>대각선 거리: <strong>${diagonal.toFixed(2)}m</strong></p>
       `;
-    } else {
-      output.innerHTML = "올바른 값을 입력하세요. 예: ?a=3&b=2";
+      document.getElementById('result').innerHTML = resultHTML;
+
+      drawSlope(a, b);
     }
+
+    function drawSlope(height, base) {
+      const canvas = document.getElementById('slopeCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const scale = 60; // 픽셀당 미터 수
+      const h = height * scale;
+      const b = base * scale;
+      const startX = 50, startY = 250;
+
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(startX + b, startY);
+      ctx.lineTo(startX + b, startY - h);
+      ctx.lineTo(startX, startY);
+      ctx.strokeStyle = '#007acc';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 대각선
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(startX + b, startY - h);
+      ctx.strokeStyle = '#ff3333';
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 텍스트
+      ctx.fillStyle = '#000';
+      ctx.font = '16px sans-serif';
+      ctx.fillText(`${base}m`, startX + b / 2 - 10, startY + 20);
+      ctx.fillText(`${height}m`, startX + b + 10, startY - h / 2);
+    }
+
+    window.onload = calculate;
   </script>
 </body>
 </html>
