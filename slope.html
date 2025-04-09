@@ -82,21 +82,38 @@
         대각선 거리: ${diagonal.toFixed(2)}m
       `;
 
-      // 그림 그리기
+      // 캔버스 크기와 스케일 조정
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const padding = 30;
+      const maxDrawWidth = canvas.width - 2 * padding;
+      const maxDrawHeight = canvas.height - 2 * padding;
+
+      const scaleX = maxDrawWidth / l;
+      const scaleY = maxDrawHeight / h;
+      const scale = Math.min(scaleX, scaleY);
+
+      const baseX = padding;
+      const baseY = canvas.height - padding;
+      const endX = baseX + l * scale;
+      const topY = baseY - h * scale;
+
+      // 삼각형 그리기
       ctx.beginPath();
-      ctx.moveTo(50, 250); // 시작점 (왼쪽 아래)
-      ctx.lineTo(250, 250); // 바닥
-      ctx.lineTo(250, 250 - h * 50); // 수직 높이
-      ctx.lineTo(50, 250); // 빗면
+      ctx.moveTo(baseX, baseY); // 시작점
+      ctx.lineTo(endX, baseY);  // 바닥선
+      ctx.lineTo(endX, topY);   // 높이
+      ctx.closePath();          // 빗면
       ctx.strokeStyle = "black";
       ctx.stroke();
 
+      // 대각선 (빗면) 강조
       ctx.beginPath();
-      ctx.moveTo(50, 250);
-      ctx.lineTo(250, 250 - h * 50);
+      ctx.moveTo(baseX, baseY);
+      ctx.lineTo(endX, topY);
       ctx.strokeStyle = "red";
+      ctx.lineWidth = 2;
       ctx.stroke();
+      ctx.lineWidth = 1;
     }
 
     // URL 파라미터로 자동 계산
