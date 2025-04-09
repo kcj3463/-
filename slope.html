@@ -1,98 +1,117 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>경사 계산기</title>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
       padding: 20px;
-      background: #f5f5f5;
+      max-width: 500px;
+      margin: auto;
     }
-    label, input {
-      font-size: 1.2em;
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      box-sizing: border-box;
     }
-    canvas {
-      margin-top: 20px;
-      border: 1px solid #ccc;
-      background: white;
+    button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
     }
     .result {
       margin-top: 20px;
-      font-size: 1.2em;
+      font-size: 18px;
+    }
+    canvas {
+      display: block;
+      margin-top: 20px;
+      border: 1px solid #ccc;
     }
   </style>
 </head>
 <body>
-  <h1>경사 계산기</h1>
-  <label>높이 (m): <input type="number" id="height" value="3" /></label><br><br>
-  <label>거리 (m): <input type="number" id="length" value="2" /></label><br><br>
-  <button onclick="calculate()">계산</button>
+  <h2>경사 계산기</h2>
+
+  <label for="height">높이 (m):</label>
+  <input type="number" id="height" step="0.01" />
+
+  <label for="length">거리 (m):</label>
+  <input type="number" id="length" step="0.01" />
+
+  <button onclick="calculate()">계산하기</button>
 
   <div class="result" id="result"></div>
-  <canvas id="slopeCanvas" width="400" height="300"></canvas>
+
+  <canvas id="canvas" width="300" height="300"></canvas>
 
   <script>
     function calculate() {
-      const a = parseFloat(document.getElementById('height').value);
-      const b = parseFloat(document.getElementById('length').value);
-      if (isNaN(a) || isNaN(b) || a <= 0 || b <= 0) {
-        alert("올바른 높이와 거리를 입력하세요.");
+      const h = parseFloat(document.getElementById("height").value);
+      const l = parseFloat(document.getElementById("length").value);
+      const result = document.getElementById("result");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      if (isNaN(h) || isNaN(l) || l === 0) {
+        result.innerHTML = "유효한 숫자를 입력하세요.";
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         return;
       }
 
-      const slope = (a / b) * 100;
-      const angle = Math.atan(a / b) * (180 / Math.PI);
-      const diagonal = Math.sqrt(a * a + b * b);
+      const slopePercent = (h / l) * 100;
+      const angle = Math.atan(h / l) * (180 / Math.PI);
+      const diagonal = Math.sqrt(h * h + l * l);
 
-      const resultHTML = `
-        <p>높이: <strong>${a}m</strong></p>
-        <p>거리: <strong>${b}m</strong></p>
-        <p>경사율: <strong>${slope.toFixed(2)}%</strong></p>
-        <p>경사각도: <strong>${angle.toFixed(2)}°</strong></p>
-        <p>대각선 거리: <strong>${diagonal.toFixed(2)}m</strong></p>
+      result.innerHTML = `
+        높이: ${h.toFixed(2)}m<br>
+        거리: ${l.toFixed(2)}m<br>
+        경사율: ${slopePercent.toFixed(2)}%<br>
+        경사각도: ${angle.toFixed(2)}°<br>
+        대각선 거리: ${diagonal.toFixed(2)}m
       `;
-      document.getElementById('result').innerHTML = resultHTML;
 
-      drawSlope(a, b);
-    }
-
-    function drawSlope(height, base) {
-      const canvas = document.getElementById('slopeCanvas');
-      const ctx = canvas.getContext('2d');
+      // 그림 그리기
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const scale = 60; // 픽셀당 미터 수
-      const h = height * scale;
-      const b = base * scale;
-      const startX = 50, startY = 250;
-
       ctx.beginPath();
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(startX + b, startY);
-      ctx.lineTo(startX + b, startY - h);
-      ctx.lineTo(startX, startY);
-      ctx.strokeStyle = '#007acc';
-      ctx.lineWidth = 2;
+      ctx.moveTo(50, 250); // 시작점 (왼쪽 아래)
+      ctx.lineTo(250, 250); // 바닥
+      ctx.lineTo(250, 250 - h * 50); // 수직 높이
+      ctx.lineTo(50, 250); // 빗면
+      ctx.strokeStyle = "black";
       ctx.stroke();
 
-      // 대각선
       ctx.beginPath();
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(startX + b, startY - h);
-      ctx.strokeStyle = '#ff3333';
-      ctx.setLineDash([5, 5]);
+      ctx.moveTo(50, 250);
+      ctx.lineTo(250, 250 - h * 50);
+      ctx.strokeStyle = "red";
       ctx.stroke();
-      ctx.setLineDash([]);
-
-      // 텍스트
-      ctx.fillStyle = '#000';
-      ctx.font = '16px sans-serif';
-      ctx.fillText(`${base}m`, startX + b / 2 - 10, startY + 20);
-      ctx.fillText(`${height}m`, startX + b + 10, startY - h / 2);
     }
 
-    window.onload = calculate;
+    // URL 파라미터로 자동 계산
+    window.onload = () => {
+      const params = new URLSearchParams(window.location.search);
+      const h = parseFloat(params.get("height"));
+      const l = parseFloat(params.get("length"));
+
+      if (!isNaN(h)) document.getElementById("height").value = h;
+      if (!isNaN(l)) document.getElementById("length").value = l;
+
+      if (!isNaN(h) && !isNaN(l)) {
+        calculate();
+      }
+    };
   </script>
 </body>
 </html>
