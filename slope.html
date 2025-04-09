@@ -1,64 +1,79 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>경사 계산기</title>
   <style>
     body {
       font-family: 'Arial', sans-serif;
-      background: #f9f9f9;
       text-align: center;
-      padding: 20px;
+      background-color: #f8f8f8;
     }
     canvas {
       border: 1px solid #ccc;
       margin-top: 20px;
     }
+    input {
+      margin: 5px;
+      padding: 5px;
+      width: 120px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      font-size: 16px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
-  <h1>경사 계산기</h1>
-  <label>높이 (mm): <input id="height" type="number" value="3000"></label><br><br>
-  <label>거리 (mm): <input id="distance" type="number" value="2000"></label><br><br>
-  <label>파이프 외경 (mm): <input id="od" type="number" value="100"></label><br><br>
-  <button onclick="draw()">계산 및 그림 생성</button>
+  <h2>경사 계산기</h2>
+
+  <label>높이 (mm): <input type="number" id="height" value="3000"></label><br>
+  <label>거리 (mm): <input type="number" id="distance" value="2000"></label><br>
+  <label>파이프 외경 (mm): <input type="number" id="od" value="100"></label><br>
+  <button onclick="calculate()">계산하기</button>
 
   <canvas id="canvas" width="600" height="400"></canvas>
 
   <script>
-    function draw() {
+    function calculate() {
       const height = parseFloat(document.getElementById('height').value);
       const distance = parseFloat(document.getElementById('distance').value);
       const od = parseFloat(document.getElementById('od').value);
+
+      const slopePercent = (height / distance) * 100;
+      const angleDeg = Math.atan(height / distance) * (180 / Math.PI);
+      const hypotenuse = Math.sqrt(height ** 2 + distance ** 2);
+      const elbowLength = od * 1.52;  // 일반적인 1.5D 기준 엘보 중심선 길이
+
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const slope = (height / distance) * 100;
-      const angle = Math.atan(height / distance) * (180 / Math.PI);
-      const diagonal = Math.sqrt(height**2 + distance**2);
-      const elbowLength = od * 1.52; // 대략적인 90도 엘보 중심선 길이 계산 (1.5D 타입)
-
-      // 스케일 조정
+      // 스케일링
       const scale = 0.05;
       const h = height * scale;
       const d = distance * scale;
 
-      const startX = 100;
-      const startY = 300;
+      const startX = 50;
+      const startY = 350;
+
       const endX = startX + d;
       const endY = startY - h;
 
-      // 경사선
+      // 사선 (경사)
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       ctx.lineTo(endX, endY);
-      ctx.strokeStyle = '#007acc';
+      ctx.strokeStyle = 'red';
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // 수직선과 수평선
-      ctx.setLineDash([5, 5]);
+      // 수직선/수평선
+      ctx.setLineDash([4, 3]);
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       ctx.lineTo(startX, endY);
@@ -67,15 +82,15 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // 텍스트 표기
-      ctx.fillStyle = '#000';
+      // 텍스트 출력
+      ctx.fillStyle = 'black';
       ctx.font = '14px Arial';
-      ctx.fillText(`높이: ${height}mm`, startX - 80, (startY + endY)/2);
-      ctx.fillText(`거리: ${distance}mm`, (startX + endX)/2 - 40, endY - 10);
-      ctx.fillText(`경사율: ${slope.toFixed(2)}%`, startX + d + 10, endY + 10);
-      ctx.fillText(`경사각도: ${angle.toFixed(2)}°`, startX + d + 10, endY + 30);
-      ctx.fillText(`대각선: ${diagonal.toFixed(2)}mm`, startX + d + 10, endY + 50);
-      ctx.fillText(`좌/우 엘보 길이: ${elbowLength.toFixed(1)}mm`, startX + d + 10, endY + 70);
+      ctx.fillText(`높이: ${height.toFixed(0)}mm`, startX - 40, (startY + endY) / 2);
+      ctx.fillText(`거리: ${distance.toFixed(0)}mm`, (startX + endX) / 2 - 40, endY - 10);
+      ctx.fillText(`경사율: ${slopePercent.toFixed(2)}%`, endX + 10, endY + 10);
+      ctx.fillText(`경사각도: ${angleDeg.toFixed(2)}°`, endX + 10, endY + 30);
+      ctx.fillText(`대각선 거리: ${hypotenuse.toFixed(1)}mm`, endX + 10, endY + 50);
+      ctx.fillText(`좌/우 엘보 길이: ${elbowLength.toFixed(1)}mm`, endX + 10, endY + 70);
     }
   </script>
 </body>
