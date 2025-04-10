@@ -1,147 +1,133 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>경사 계산기</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
       padding: 20px;
-    }
-    h2 {
-      font-size: 24px;
+      background: #f4f4f4;
     }
     input, select {
-      width: 300px;
-      padding: 8px;
-      margin-bottom: 10px;
-    }
-    button {
-      padding: 10px 20px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
+      padding: 6px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
     }
     canvas {
       border: 1px solid #ccc;
       margin-top: 20px;
     }
+    .result {
+      margin-top: 10px;
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+    }
   </style>
 </head>
 <body>
+  <h2>배관 경사 계산기</h2>
+  <label>거리 (mm):</label>
+  <input type="number" id="distance" value="2000" />
+  
+  <label>높이 (mm):</label>
+  <input type="number" id="height" value="1000" />
+  
+  <label>배관 외경 (mm):</label>
+  <input type="number" id="diameter" value="100" />
+  
+  <label>엘보 위치:</label>
+  <select id="elbowPosition">
+    <option value="none">없음</option>
+    <option value="one">한쪽</option>
+    <option value="both">양쪽</option>
+  </select>
+  
+  <button onclick="calculate()">계산하기</button>
+  
+  <div class="result" id="output"></div>
+  <canvas id="pipeCanvas" width="500" height="300"></canvas>
 
-<h2>경사 계산기</h2>
+  <script>
+    function calculate() {
+      const d = parseFloat(document.getElementById("distance").value);
+      const h = parseFloat(document.getElementById("height").value);
+      const dia = parseFloat(document.getElementById("diameter").value);
+      const elbowPos = document.getElementById("elbowPosition").value;
 
-<label>높이 (mm):</label><br>
-<input id="height" type="number" value="3000"><br>
+      const bendRadius = dia * 1.5;
 
-<label>거리 (mm):</label><br>
-<input id="distance" type="number" value="2000"><br>
+      // 거리/높이 보정
+      let adjD = d;
+      let adjH = h;
+      let subtractLabel = "";
 
-<label>외경 (mm):</label><br>
-<input id="diameter" type="number" value="50"><br>
+      if (elbowPos === "one") {
+        adjD -= bendRadius;
+        adjH -= bendRadius;
+        subtractLabel = ` (엘보 반경 ${bendRadius.toFixed(1)}mm 차감)`;
+      } else if (elbowPos === "both") {
+        adjD -= bendRadius * 2;
+        adjH -= bendRadius * 2;
+        subtractLabel = ` (엘보 반경 ${bendRadius.toFixed(1)}mm × 2 차감)`;
+      }
 
-<label>배관 방향:</label><br>
-<select id="direction">
-  <option value="left">좌측</option>
-  <option value="right" selected>우측</option>
-</select><br>
+      const slopePercent = (adjH / adjD) * 100;
+      const slopeAngle = Math.atan2(adjH, adjD) * (180 / Math.PI);
+      const diagonal = Math.sqrt(adjH ** 2 + adjD ** 2);
 
-<button onclick="calculate()">계산하기</button>
+      document.getElementById("output").innerHTML = `
+        <b>결과:</b><br>
+        보정 거리: ${adjD.toFixed(1)} mm${subtractLabel}<br>
+        보정 높이: ${adjH.toFixed(1)} mm${subtractLabel}<br>
+        경사율: ${slopePercent.toFixed(2)}%<br>
+        경사각도: ${slopeAngle.toFixed(2)}°<br>
+        대각선 길이: ${diagonal.toFixed(1)} mm
+      `;
 
-<div id="result" style="margin-top:20px; font-size: 15px;"></div>
-
-<canvas id="pipeCanvas" width="500" height="400"></canvas>
-
-<script>
-  function calculate() {
-    const h = parseFloat(document.getElementById("height").value);
-    const d = parseFloat(document.getElementById("distance").value);
-    const dia = parseFloat(document.getElementById("diameter").value);
-    const dir = document.getElementById("direction").value;
-
-    if (isNaN(h) || isNaN(d) || isNaN(dia) || dia <= 0) {
-      alert("모든 값을 올바르게 입력해주세요.");
-      return;
+      drawPipe(adjD, adjH, dia);
     }
 
-    const slopePercent = (h / d) * 100;
-    const angleDeg = Math.atan(h / d) * (180 / Math.PI);
-    const hypotenuse = Math.sqrt(h * h + d * d);
+    function drawPipe(d, h, dia) {
+      const canvas = document.getElementById("pipeCanvas");
+      const ctx = canvas.getContext("2d");
 
-    // 엘보 기준 벤딩 치수 (단순 계산)
-    const bendLeft = d - dia * 1.5;
-    const bendRight = h - dia * 1.5;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const resultHTML = `
-      <b>높이:</b> ${h.toFixed(2)}mm<br>
-      <b>거리:</b> ${d.toFixed(2)}mm<br>
-      <b>외경:</b> ${dia.toFixed(2)}mm<br>
-      <b>경사율:</b> ${slopePercent.toFixed(2)}%<br>
-      <b>경사각도:</b> ${angleDeg.toFixed(2)}°<br>
-      <b>대각선 거리:</b> ${hypotenuse.toFixed(2)}mm<br><br>
-      <b>엘보 기준 벤딩 치수</b><br>
-      좌측 치수: ${bendLeft > 0 ? bendLeft.toFixed(2) + "mm" : "계산불가"}<br>
-      우측 치수: ${bendRight > 0 ? bendRight.toFixed(2) + "mm" : "계산불가"}<br>
-    `;
+      const scale = 0.1; // 10mm = 1px
+      const startX = 50;
+      const startY = canvas.height - 50;
 
-    document.getElementById("result").innerHTML = resultHTML;
-    drawPipeDiagram(h, d, dia, dir);
-  }
+      const dx = d * scale;
+      const dy = h * scale;
 
-  function drawPipeDiagram(h, d, dia, dir) {
-    const canvas = document.getElementById("pipeCanvas");
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const endX = startX + dx;
+      const endY = startY - dy;
 
-    const scale = 300 / Math.max(h, d); // 적절한 비율로 줄이기
-    const offsetX = 100;
-    const offsetY = 350;
+      // 파이프 라인
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 4;
+      ctx.stroke();
 
-    const pxH = h * scale;
-    const pxD = d * scale;
-    const pxDia = dia * scale;
+      // 거리 표기
+      ctx.fillStyle = "#000";
+      ctx.font = "12px sans-serif";
+      ctx.fillText(`거리: ${d.toFixed(1)} mm`, startX + dx / 2 - 30, startY + 20);
+      ctx.fillText(`높이: ${h.toFixed(1)} mm`, endX + 10, startY - dy / 2);
+      ctx.fillText(`대각선: ${(Math.sqrt(d ** 2 + h ** 2)).toFixed(1)} mm`, startX + dx / 3, startY - dy / 2);
 
-    // 라인 시작점
-    const startX = dir === "right" ? offsetX : offsetX + pxD;
-    const startY = offsetY;
-
-    // 수평 라인
-    ctx.beginPath();
-    ctx.moveTo(startX, startY);
-    ctx.lineTo(startX + (dir === "right" ? pxD : -pxD), startY);
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // 수직 라인
-    ctx.beginPath();
-    ctx.moveTo(startX + (dir === "right" ? pxD : -pxD), startY);
-    ctx.lineTo(startX + (dir === "right" ? pxD : -pxD), startY - pxH);
-    ctx.stroke();
-
-    // 대각선 배관
-    ctx.beginPath();
-    ctx.moveTo(startX, startY);
-    ctx.lineTo(startX + (dir === "right" ? pxD : -pxD), startY - pxH);
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // 라벨
-    ctx.fillStyle = "black";
-    ctx.font = "12px Arial";
-    ctx.fillText("거리", startX + (dir === "right" ? pxD/2 - 10 : -pxD/2 - 20), startY + 15);
-    ctx.fillText("높이", startX + (dir === "right" ? pxD : -pxD) + 5, startY - pxH/2);
-    ctx.fillText("대각선", startX + (dir === "right" ? pxD/2 : -pxD/2) - 15, startY - pxH/2);
-
-    // 엘보 위치 원
-    ctx.beginPath();
-    ctx.arc(startX + (dir === "right" ? pxD : -pxD), startY, pxDia/2, 0, 2 * Math.PI);
-    ctx.strokeStyle = "blue";
-    ctx.stroke();
-  }
-</script>
-
+      // 파이프 끝 원형 (단면 표시)
+      ctx.beginPath();
+      ctx.arc(endX, endY, dia * scale / 2, 0, Math.PI * 2);
+      ctx.strokeStyle = "#555";
+      ctx.stroke();
+    }
+  </script>
 </body>
 </html>
