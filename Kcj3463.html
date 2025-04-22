@@ -6,7 +6,7 @@ app.use(express.json());
 
 app.post("/summarize", async (req, res) => {
   const userPrompt = req.body.prompt;
-  const apiKey = "sk-..."; // 발급받은 GPT API Key
+  const apiKey = "sk-...sdYA"; // 발급받은 GPT API Key
 
   try {
     const result = await axios.post("https://api.openai.com/v1/chat/completions", {
