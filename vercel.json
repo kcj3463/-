@@ -1,10 +1,5 @@
 {
-  "functions": {
-    "index.js": {
-      "runtime": "edge"
-    }
-  },
-  "routes": [
-    { "src": "/.*", "dest": "index.js" }
-  ]
+  "version": 2,
+  "builds": [{ "src": "api/summary.js", "use": "@vercel/node" }],
+  "routes": [{ "src": "/api/summary", "dest": "api/summary.js" }]
 }
