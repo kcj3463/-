@@ -1,35 +1,33 @@
 export default async function handler(req, res) {
-  const OPENAI_API_KEY = sk-...sdYA;
+  const { text } = req.query;
 
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'GET only' });
+  if (!text) {
+    return res.status(400).json({ error: "text 파라미터가 필요합니다." });
   }
-
-  const userText = req.query.text;
-  if (!userText) {
-    return res.status(400).json({ error: 'No text provided' });
-  }
-
-  const body = {
-    model: "gpt-3.5-turbo",
-    messages: [{ role: "user", content: `다음 내용을 한 줄로 요약해줘:\n${userText}` }],
-  };
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: `다음 내용을 요약해줘:\n${text}` }],
+        temperature: 0.7
+      })
     });
 
-    const result = await response.json();
-    const summary = result.choices?.[0]?.message?.content?.trim() || "요약 실패";
+    const data = await response.json();
 
-    res.status(200).json({ summary });
-  } catch (err) {
-    res.status(500).json({ error: 'OpenAI API 요청 실패', detail: err.message });
+    if (!data.choices || !data.choices[0]) {
+      return res.status(500).json({ error: "요약 실패", detail: data });
+    }
+
+    return res.status(200).json({ summary: data.choices[0].message.content });
+
+  } catch (error) {
+    return res.status(500).json({ error: "서버 오류", detail: error.message });
   }
 }
